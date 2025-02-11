@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-var recallKey struct{ Recaller }
 var logKey struct{ slog.Logger }
 
 // ContextWithLogger returns a new context with the logger.
