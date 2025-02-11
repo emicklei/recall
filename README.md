@@ -7,4 +7,4 @@ However, enabling debug logging in production environments can result in excessi
 
 So, you ideally want debug logging information only when a failure occurs. A failure situation is an exceptional occurrence, so it is assumed that reprocessing the same request for the purpose of collecting information is not overly costly. Additionally, it is assumed that processing the same request leads to the same failure.
 
-The `recall` package addresses this by encapsulating a function that can return an error. If an error is detected, the package will recall that same function again, but this time with a different logger configured to capture all debug logging.
+The `recall` package builds on this idea by encapsulating a function that can return an error. If an error is detected, a Recaller will call that same function again, but this time with a different logger configured to capture all debug logging.
