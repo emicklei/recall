@@ -24,7 +24,6 @@ func LoggerFromContext(ctx context.Context) (l *slog.Logger) {
 
 type Recaller struct {
 	context            context.Context
-	logger             *slog.Logger
 	messageFormat      string
 	correlationAttrKey string
 }
@@ -33,21 +32,8 @@ type Recaller struct {
 func New(ctx context.Context) Recaller {
 	return Recaller{
 		context:       ctx,
-		logger:        slog.Default(),
 		messageFormat: "[RECALL] %s",
 	}
-}
-
-// WithContext returns a Recaller with the context.
-func (r Recaller) WithContext(ctx context.Context) Recaller {
-	r.context = ctx
-	return r
-}
-
-// WithLogger sets the logger to use for the debug log message.
-func (r Recaller) WithLogger(logger *slog.Logger) Recaller {
-	r.logger = logger
-	return r
 }
 
 // WithMessageFormat sets the message format for the debug log message.
@@ -61,14 +47,14 @@ func (r Recaller) WithMessageFormat(format string) Recaller {
 }
 
 func (r Recaller) Call(f func(ctx context.Context) error) error {
+	currentLogger := LoggerFromContext(r.context)
 	// is debug enabled?
-	if r.logger.Handler().Enabled(r.context, slog.LevelDebug) {
+	if currentLogger.Handler().Enabled(r.context, slog.LevelDebug) {
 		// no recall on error needed
 		return f(r.context)
 	}
 	err := f(r.context)
 	if err != nil {
-		currentLogger := LoggerFromContext(r.context)
 		handler := debugHandler{currentLogger.Handler(), r.messageFormat}
 		debugLogger := slog.New(handler)
 		ctx := ContextWithLogger(r.context, debugLogger)
