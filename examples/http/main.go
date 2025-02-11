@@ -25,7 +25,7 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 	ctxWithLogger := recall.ContextWithLogger(r.Context(), logWithRequestID)
 	recaller := recall.New(ctxWithLogger)
 
-	// wrap the work in a function to be able to recall it
+	// wrap the work in a function to be able to call it again on error
 	toCall := func(ctx context.Context) error {
 		if err := doWork(ctx, r.PathValue("workId")); err != nil {
 			// must use logger from context
