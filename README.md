@@ -9,7 +9,18 @@ However, enabling debug logging in production environments can result in excessi
 
 So, you ideally want debug logging information only when a failure occurs. A failure situation is an exceptional occurrence, so it is assumed that reprocessing the same request for the purpose of collecting information is not overly costly. Additionally, it is assumed that processing the same request leads to the same failure.
 
-The `recall` package builds on this idea by encapsulating a function that can return an error. If an error is detected, a Recaller will call that same function again, but this time with a different logger configured to capture all debug logging.
+The `recall` package builds on this idea by encapsulating a function that can return an error. The following strategies are available to capture debug logging:
+
+#### RecallOnErrorStrategy
+
+If an error is detected, a Recaller will call that same function again, but this time with a different logger configured to capture all debug logging. 
+This strategy requires that your function has no side-effects ; idempotent.
+This is the default strategy.
+
+#### RecordingStrategy
+
+Debug logging is recorded by the Recaller and only if an error is detected, the log records are replayed from memory using the default logger. 
+This strategy can result in a higher memory consumption (and GC time) because all Debug records are recorded on every function call.
 
 ### Usage
 
