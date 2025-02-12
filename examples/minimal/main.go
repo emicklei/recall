@@ -13,6 +13,7 @@ func main() {
 
 	err := recaller.Call(func(ctx context.Context) error {
 		rlog := recall.LoggerFromContext(ctx)
+
 		rlog.Info("begin")
 		rlog.Debug("this will show up on error")
 		return errors.New("something went wrong")

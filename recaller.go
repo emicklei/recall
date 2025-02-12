@@ -23,17 +23,25 @@ func LoggerFromContext(ctx context.Context) (l *slog.Logger) {
 	return v.(*slog.Logger)
 }
 
+type captureStrategy int
+
+const (
+	RecallOnErrorStrategy captureStrategy = iota
+	RecordingStrategy
+)
+
 type Recaller struct {
-	context            context.Context
-	messageFormat      string
-	correlationAttrKey string
+	context         context.Context
+	messageFormat   string
+	captureStrategy captureStrategy
 }
 
 // New creates a new Recaller initialized with a Context, default logger and default message format.
 func New(ctx context.Context) Recaller {
 	return Recaller{
-		context:       ctx,
-		messageFormat: "[RECALL] %s",
+		context:         ctx,
+		messageFormat:   "[RECALL] %s",
+		captureStrategy: RecallOnErrorStrategy,
 	}
 }
 
@@ -47,7 +55,25 @@ func (r Recaller) WithMessageFormat(format string) Recaller {
 	return r
 }
 
+// WithCaptureStrategy sets the strategy for capturing log messages. Default is RecallOnErrorStrategy.
+func (r Recaller) WithCaptureStrategy(strategy captureStrategy) Recaller {
+	r.captureStrategy = strategy
+	return r
+}
+
+// Call calls the function and produces debug log messages when the function returns an error.
+// Depending on the capture strategy, the function is called once or twice.
+// The default strategy is to call the function a second time when an error is returned.
 func (r Recaller) Call(f func(ctx context.Context) error) error {
+	if r.captureStrategy == RecordingStrategy {
+		return r.captureRecords(f)
+	}
+	return r.captureStrategyRecallOnError(f)
+}
+
+// captureStrategyRecallOnError calls the function and captures debug log messages on the second call
+// when the function returns an error.
+func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error) error {
 	currentLogger := LoggerFromContext(r.context)
 	// is debug enabled?
 	if currentLogger.Handler().Enabled(r.context, slog.LevelDebug) {
@@ -68,7 +94,9 @@ func (r Recaller) Call(f func(ctx context.Context) error) error {
 	return err
 }
 
-func (r Recaller) Capture(f func(ctx context.Context) error) error {
+// captureRecords call the function and records all non-handled log messages.
+// If the function returns an error then the recorded messages are replayed.
+func (r Recaller) captureRecords(f func(ctx context.Context) error) error {
 	def := slog.Default()
 	rec := newRecorder(def.Handler())
 	log := slog.New(rec)
