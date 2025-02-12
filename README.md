@@ -14,7 +14,7 @@ The `recall` package builds on this idea by encapsulating a function that can re
 #### RecallOnErrorStrategy
 
 If an error is detected, a Recaller will call that same function again, but this time with a different logger configured to capture all debug logging. 
-This strategyrequires that your function has no side-effects ; is idempotent.
+This strategy requires that your function has no side-effects ; idempotent.
 This is the default strategy.
 
 #### RecordingStrategy
