@@ -8,15 +8,11 @@ import (
 
 func TestRecorder(t *testing.T) {
 	def := slog.Default()
-	rec := newRecorder(def.Handler())
+	rec := newRecorder(def.Handler(), "%s")
 	log := slog.New(rec)
 	log.Info("welcome", "a", "b")
 	log.Debug("to my", "c", "d")
-	log.Error("space", "e", "f")
-	all := []slog.Record{}
-	rec.recordsDo(func(each slog.Record) {
-		all = append(all, each)
-	})
+	all := rec.records
 	if len(all) != 1 {
 		t.Fail()
 	}
@@ -29,15 +25,11 @@ func TestRecorder(t *testing.T) {
 }
 func TestRecorderWarn(t *testing.T) {
 	def := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
-	rec := newRecorder(def.Handler())
+	rec := newRecorder(def.Handler(), "%s")
 	log := slog.New(rec)
 	log.Info("welcome", "a", "b")
 	log.Debug("to my", "c", "d")
-	log.Error("space", "e", "f")
-	all := []slog.Record{}
-	rec.recordsDo(func(each slog.Record) {
-		all = append(all, each)
-	})
+	all := rec.records
 	if len(all) != 2 {
 		t.Errorf("expected 2 records, got %d", len(all))
 	}

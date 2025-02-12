@@ -2,7 +2,6 @@ package recall
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 )
@@ -98,23 +97,12 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 // If the function returns an error then the recorded messages are replayed.
 func (r Recaller) captureRecords(f func(ctx context.Context) error) error {
 	def := slog.Default()
-	rec := newRecorder(def.Handler())
+	rec := newRecorder(def.Handler(), r.messageFormat)
 	log := slog.New(rec)
 	ctx := ContextWithLogger(r.context, log)
 	err := f(ctx)
 	if err != nil {
-		rec.recordsDo(func(each slog.Record) {
-			attrs := []any{}
-			each.Attrs(func(a slog.Attr) bool {
-				attrs = append(attrs, a)
-				return true
-			})
-			if each.Level == slog.LevelDebug {
-				def.Log(r.context, slog.LevelInfo, fmt.Sprintf(r.messageFormat, each.Message), attrs...)
-			} else {
-				def.Log(r.context, each.Level, each.Message, attrs...)
-			}
-		})
+		rec.flush(ctx)
 	}
 	return err
 }
