@@ -2,6 +2,7 @@ package recall
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 )
@@ -63,6 +64,29 @@ func (r Recaller) Call(f func(ctx context.Context) error) error {
 			// this time it worked
 			return nil
 		}
+	}
+	return err
+}
+
+func (r Recaller) Capture(f func(ctx context.Context) error) error {
+	def := slog.Default()
+	rec := newRecorder(def.Handler())
+	log := slog.New(rec)
+	ctx := ContextWithLogger(r.context, log)
+	err := f(ctx)
+	if err != nil {
+		rec.recordsDo(func(each slog.Record) {
+			attrs := []any{}
+			each.Attrs(func(a slog.Attr) bool {
+				attrs = append(attrs, a)
+				return true
+			})
+			if each.Level == slog.LevelDebug {
+				def.Log(r.context, slog.LevelInfo, fmt.Sprintf(r.messageFormat, each.Message), attrs...)
+			} else {
+				def.Log(r.context, each.Level, each.Message, attrs...)
+			}
+		})
 	}
 	return err
 }

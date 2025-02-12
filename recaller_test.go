@@ -22,7 +22,7 @@ func TestRecall(t *testing.T) {
 }
 
 func TestRecallRecords(t *testing.T) {
-	rec := new(recorder)
+	rec := new(recording)
 	ctx := ContextWithLogger(context.Background(), slog.New(rec))
 	r := New(ctx)
 	r.Call(willError)
@@ -44,20 +44,20 @@ func noError(ctx context.Context) error {
 	return nil
 }
 
-type recorder struct {
+type recording struct {
 	records []slog.Record
 }
 
-func (r *recorder) Enabled(ctx context.Context, level slog.Level) bool {
+func (r *recording) Enabled(ctx context.Context, level slog.Level) bool {
 	return level == slog.LevelInfo
 }
-func (r *recorder) Handle(ctx context.Context, record slog.Record) error {
+func (r *recording) Handle(ctx context.Context, record slog.Record) error {
 	r.records = append(r.records, record)
 	return nil
 }
-func (r *recorder) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (r *recording) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return r
 }
-func (r *recorder) WithGroup(group string) slog.Handler {
+func (r *recording) WithGroup(group string) slog.Handler {
 	return r
 }
