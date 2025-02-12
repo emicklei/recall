@@ -12,9 +12,9 @@ func main() {
 	recaller := recall.New(context.Background())
 
 	err := recaller.Call(func(ctx context.Context) error {
-		slog := recall.LoggerFromContext(ctx)
-		slog.Info("begin")
-		slog.Debug("this will show up on error")
+		rlog := recall.LoggerFromContext(ctx)
+		rlog.Info("begin")
+		rlog.Debug("this will show up on error")
 		return errors.New("something went wrong")
 	})
 
