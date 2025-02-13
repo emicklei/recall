@@ -46,4 +46,6 @@ will output
 
 See [examples](https://github.com/emicklei/recall/tree/main/examples) for other usage.
 
+A different approach in both capturing and visualising logging is the [Nanny](https://github.com/emicklei/nanny) package.
+
 (c) 2025, https://ernestmicklei.com. MIT License.
