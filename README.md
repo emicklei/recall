@@ -7,9 +7,11 @@ Ideally, log records should contain comprehensive context.
 It can be beneficial to also have access to all debug-level logs **leading up to the point** of failure.
 However, enabling debug logging in production environments can result in excessive log volumes and increased CPU utilization.
 
-So, you ideally want debug logging information only when a failure occurs. A failure situation is an exceptional occurrence, so it is assumed that reprocessing the same request for the purpose of collecting information is not overly costly. Additionally, it is assumed that processing the same request leads to the same failure.
+So, you ideally want debug logging information only when a failure occurs. 
+In general, a failure situation is an exceptional occurrence, so collecting information in that case is not overly costly.
 
-The `recall` package builds on this idea by encapsulating a function that can return an error. The following strategies are available to capture debug logging:
+The `recall` package builds on this idea by encapsulating a function that can return an error. 
+The following strategies are available to capture debug logging:
 
 #### RecallOnErrorStrategy
 
@@ -19,8 +21,9 @@ This is the default strategy.
 
 #### RecordingStrategy
 
-Debug logging is recorded by the Recaller and only if an error is detected, the log records are replayed from memory using the default logger. 
-This strategy can result in a higher memory consumption (and GC time) because all Debug records are recorded on every function call.
+Debug logging is recorded by the Recaller directly and only if an error is detected, the log records are replayed from memory using the default logger. 
+This strategy can result in a higher memory consumption (and GC time) because all Debug records are recorded on every function call. 
+The function is not called a second time so no idempotency in processing is required.
 
 ### Usage
 
