@@ -14,12 +14,12 @@ So, you ideally want debug logging information only when a failure occurs.
 In general, a failure situation is an exceptional occurrence, so collecting information in that case is not overly costly.
 
 The `recall` package builds on this idea by encapsulating a function that can return an error. 
-The following strategies are available to capture debug logging:
+The following strategies are available to capture debug (slog) logging:
 
 #### RecallOnErrorStrategy
 
 If an error is detected, a Recaller will call that same function again, but this time with a different logger configured to capture all debug logging. 
-This strategy requires that your function has no side-effects ; idempotent.
+This strategy requires that your function has no side-effects ; idempotency.
 This is the default strategy.
 
 #### RecordingStrategy
@@ -33,10 +33,10 @@ The function is not called a second time so no idempotency in processing is requ
 	recaller := recall.New(context.Background())
 
 	err := recaller.Call(func(ctx context.Context) error {
-		rlog := recall.LoggerFromContext(ctx)
+		log := recall.LoggerFromContext(ctx)
 		
-		rlog.Info("begin")
-		rlog.Debug("this will show up on error")
+		log.Info("begin")
+		log.Debug("this will show up on error")
 		return errors.New("something went wrong")
 	})
 
