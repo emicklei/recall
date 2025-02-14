@@ -1,6 +1,9 @@
 ## recall
 
+[![Go](https://github.com/emicklei/recall/actions/workflows/go.yml/badge.svg)](https://github.com/emicklei/recall/actions/workflows/go.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/emicklei/recall)](https://goreportcard.com/report/github.com/emicklei/recall)
 [![GoDoc](https://pkg.go.dev/badge/github.com/emicklei/recall)](https://pkg.go.dev/github.com/emicklei/recall)
+[![codecov](https://codecov.io/gh/emicklei/recall/branch/main/graph/badge.svg)](https://codecov.io/gh/emicklei/recall)
 
 In service-oriented architectures, request processing failures often require detailed logging for effective troubleshooting.
 Ideally, log records should contain comprehensive context.
@@ -27,7 +30,7 @@ The function is not called a second time so no idempotency in processing is requ
 
 ### Usage
 
-	recaller := recall.New(context.Background())
+	recaller := recall.New(context.Background()) // uses RecallOnErrorStrategy by default
 
 	err := recaller.Call(func(ctx context.Context) error {
 		rlog := recall.LoggerFromContext(ctx)
@@ -46,6 +49,6 @@ will output
 
 See [examples](https://github.com/emicklei/recall/tree/main/examples) for other usage.
 
-A different approach in both capturing and visualising logging is the [Nanny](https://github.com/emicklei/nanny) package.
+A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.
 
 (c) 2025, https://ernestmicklei.com. MIT License.

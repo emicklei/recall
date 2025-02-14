@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"sync"
 )
 
@@ -87,7 +88,10 @@ func (r *recorder) flush(ctx context.Context) {
 			// change level otherwise it will be filtered out
 			record.Level = slog.LevelInfo
 		}
-		r.handler.Handle(ctx, record)
+		if err := r.handler.Handle(ctx, record); err != nil {
+			// do not loose the record so print it directly
+			_, _ = fmt.Fprintf(os.Stderr, "%v %v %s", record.Time, record.Level, record.Message)
+		}
 	}
 	r.records = []slog.Record{}
 }
