@@ -30,7 +30,7 @@ The function is not called a second time so no idempotency in processing is requ
 
 ### Usage
 
-	recaller := recall.New(context.Background()) // uses RecallOnErrorStrategy by default
+	recaller := recall.New(context.Background())
 
 	err := recaller.Call(func(ctx context.Context) error {
 		rlog := recall.LoggerFromContext(ctx)
@@ -46,6 +46,8 @@ will output
     2025/02/11 18:55:23 INFO [RECALL] begin
     2025/02/11 18:55:23 INFO [RECALL] this will show up on error
     2025/02/11 18:55:23 ERROR bummer err="something went wrong"
+
+This example uses RecallOnErrorStrategy by default.
 
 See [examples](https://github.com/emicklei/recall/tree/main/examples) for other usage.
 
