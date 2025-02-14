@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
 )
 
 type recorder struct {
@@ -90,7 +91,12 @@ func (r *recorder) flush(ctx context.Context) {
 		}
 		if err := r.handler.Handle(ctx, record); err != nil {
 			// do not loose the record so print it directly
-			_, _ = fmt.Fprintf(os.Stderr, "%v %v %s", record.Time, record.Level, record.Message)
+			_, _ = fmt.Fprintf(os.Stderr, "%v %v %s", record.Time.Format(time.RFC3339), record.Level, record.Message)
+			record.Attrs(func(a slog.Attr) bool {
+				_, _ = fmt.Fprintf(os.Stderr, " %s=%v", a.Key, a.Value)
+				return true
+			})
+			fmt.Fprintln(os.Stderr)
 		}
 	}
 	r.records = []slog.Record{}

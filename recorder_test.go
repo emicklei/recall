@@ -2,6 +2,7 @@ package recall
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"testing"
@@ -21,6 +22,14 @@ func TestRecorderWithGroup(t *testing.T) {
 	if v := attrs[0].Key; v != "g1.a" {
 		t.Error("unexpected", v)
 	}
+	subgrp := log.WithGroup("g2")
+	subgrp.Debug("test", "a", "b")
+	snd := rec.records[1]
+	attrs = attrsFrom(snd)
+	if v := attrs[0].Key; v != "g2.a" {
+		t.Error("unexpected", v)
+	}
+
 }
 
 func TestRecorder(t *testing.T) {
@@ -105,4 +114,33 @@ func attrsFrom(record slog.Record) (list []slog.Attr) {
 		return true
 	})
 	return
+}
+
+func TestFlushOnError(t *testing.T) {
+	def := slog.Default()
+	rec := newRecorder(def.Handler(), "%s")
+	log := slog.New(rec)
+	log.Debug("test")
+	if len(rec.records) != 1 {
+		t.Fail()
+	}
+	log.Error("error")
+	if len(rec.records) != 0 {
+		t.Fail()
+	}
+}
+
+type badHandler struct{}
+
+func (b badHandler) Enabled(ctx context.Context, level slog.Level) bool   { return false }
+func (b badHandler) Handle(ctx context.Context, record slog.Record) error { return fmt.Errorf("bad") }
+func (b badHandler) WithAttrs(attrs []slog.Attr) slog.Handler             { return b }
+func (b badHandler) WithGroup(group string) slog.Handler                  { return b }
+
+func TestErrornousDefaultHandler(t *testing.T) {
+	def := slog.New(badHandler{})
+	rec := newRecorder(def.Handler(), "%s")
+	log := slog.New(rec)
+	log.Debug("test", "q", 42)
+	log.Error("test")
 }
