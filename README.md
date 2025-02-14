@@ -1,6 +1,6 @@
 ## recall
 
-[![Go](https://github.com/emicklei/recall/actions/workflows/go.yml/badge.svg)](https://github.com/emicklei/recall/actions/workflows/go.yml)
+[![Go](https://github.com/emicklei/recall/actions/workflows/go.yaml/badge.svg)](https://github.com/emicklei/recall/actions/workflows/go.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/emicklei/recall)](https://goreportcard.com/report/github.com/emicklei/recall)
 [![GoDoc](https://pkg.go.dev/badge/github.com/emicklei/recall)](https://pkg.go.dev/github.com/emicklei/recall)
 [![codecov](https://codecov.io/gh/emicklei/recall/branch/main/graph/badge.svg)](https://codecov.io/gh/emicklei/recall)
