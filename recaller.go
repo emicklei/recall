@@ -2,7 +2,9 @@ package recall
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"strings"
 )
 
@@ -33,6 +35,7 @@ type Recaller struct {
 	context         context.Context
 	messageFormat   string
 	captureStrategy captureStrategy
+	handlePanic     bool
 }
 
 // New creates a new Recaller initialized with a Context, default logger and default message format.
@@ -41,6 +44,7 @@ func New(ctx context.Context) Recaller {
 		context:         ctx,
 		messageFormat:   "[RECALL] %s",
 		captureStrategy: RecallOnErrorStrategy,
+		handlePanic:     true,
 	}
 }
 
@@ -60,6 +64,13 @@ func (r Recaller) WithCaptureStrategy(strategy captureStrategy) Recaller {
 	return r
 }
 
+// WithPanicRecovery enables or disables handling panics. Default is true.
+// An extra Error log entry is written after recovering from a panic.
+func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
+	r.handlePanic = enabled
+	return r
+}
+
 // Call calls the function and produces debug log messages when the function returns an error.
 // Depending on the capture strategy, the function is called once or twice.
 // The default strategy is to call the function a second time when an error is returned.
@@ -72,12 +83,29 @@ func (r Recaller) Call(f func(ctx context.Context) error) error {
 
 // captureStrategyRecallOnError calls the function and captures debug log messages on the second call
 // when the function returns an error.
-func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error) error {
+func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error) (callErr error) {
 	currentLogger := LoggerFromContext(r.context)
 	// is debug enabled?
 	if currentLogger.Handler().Enabled(r.context, slog.LevelDebug) {
 		// no recall on error needed
 		return f(r.context)
+	}
+	if r.handlePanic {
+		defer func() {
+			// recover from first panic
+			err := recover()
+			if err != nil {
+				defer func() {
+					// recover from second panic
+					secondErr := recover()
+					if secondErr != nil {
+						currentLogger.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+						callErr = fmt.Errorf("%v", secondErr)
+					}
+				}()
+				callErr = r.recoveredCall(f)
+			}
+		}()
 	}
 	err := f(r.context)
 	if err != nil {
@@ -93,13 +121,32 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 	return err
 }
 
+func (r Recaller) recoveredCall(f func(ctx context.Context) error) error {
+	currentLogger := LoggerFromContext(r.context)
+	handler := debugHandler{currentLogger.Handler(), r.messageFormat}
+	debugLogger := slog.New(handler)
+	ctx := ContextWithLogger(r.context, debugLogger)
+	return f(ctx)
+}
+
 // captureRecords call the function and records all non-handled log messages.
 // If the function returns an error then the recorded messages are replayed.
-func (r Recaller) captureRecords(f func(ctx context.Context) error) error {
+func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr error) {
 	def := slog.Default()
 	rec := newRecorder(def.Handler(), r.messageFormat)
 	log := slog.New(rec)
 	ctx := ContextWithLogger(r.context, log)
+	if r.handlePanic {
+		defer func() {
+			// recover from first panic
+			err := recover()
+			if err != nil {
+				rec.flush(ctx)
+				log.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+				callErr = fmt.Errorf("%v", err)
+			}
+		}()
+	}
 	err := f(ctx)
 	if err != nil {
 		rec.flush(ctx)

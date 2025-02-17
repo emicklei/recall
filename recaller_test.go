@@ -93,18 +93,35 @@ func TestRecallDefaultHasDebugWhenRecording(t *testing.T) {
 	}
 }
 
-func TestRecallRecords(t *testing.T) {
+func TestRecallRecordingWithPanic(t *testing.T) {
 	rec := new(recording)
-	ctx := ContextWithLogger(context.Background(), slog.New(rec))
-	r := New(ctx)
-	r.Call(willError)
-	if len(rec.records) != 1 {
-		t.Fatalf("expected 1 record, got %d", len(rec.records))
+	log := slog.New(rec)
+	slog.SetDefault(log)
+	ctx := ContextWithLogger(context.Background(), log)
+	r := New(ctx).WithCaptureStrategy(RecordingStrategy)
+	r.Call(willPanic)
+	if len(rec.records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(rec.records))
 	}
 
-	if !strings.HasSuffix(rec.records[0].Message, "will error") {
+	if !strings.HasSuffix(rec.records[0].Message, "before panic") {
 		t.Error(rec.records[0].Message)
 	}
+}
+
+func TestRecallRecordingNoPanic(t *testing.T) {
+	rec := new(recording)
+	log := slog.New(rec)
+	slog.SetDefault(log)
+	ctx := ContextWithLogger(context.Background(), log)
+	r := New(ctx).WithCaptureStrategy(RecordingStrategy).WithPanicRecovery(false)
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fail()
+		}
+	}()
+	r.Call(willPanic)
 }
 
 var retries = 0
@@ -125,6 +142,30 @@ func willError(ctx context.Context) error {
 func noError(ctx context.Context) error {
 	LoggerFromContext(ctx).Debug("no error")
 	return nil
+}
+
+func TestRecallPanic(t *testing.T) {
+	r := New(context.Background())
+	err := r.Call(willPanic)
+	if err == nil {
+		t.Error("expected error")
+	}
+}
+
+func TestRecallNoPanic(t *testing.T) {
+	r := New(context.Background()).WithPanicRecovery(false)
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fail()
+		}
+	}()
+	r.Call(willPanic)
+}
+
+func willPanic(ctx context.Context) error {
+	LoggerFromContext(ctx).Debug("before panic")
+	panic("boom")
 }
 
 type recording struct {

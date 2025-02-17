@@ -39,7 +39,9 @@ The function is not called a second time so no idempotency in processing is requ
 		log.Debug("this will show up on error")
 		return errors.New("something went wrong")
 	})
-
+	
+	slog.Error("bummer", "err", err)
+	
 will output
 
     2025/02/11 18:55:23 INFO begin
@@ -50,6 +52,12 @@ will output
 This example uses RecallOnErrorStrategy by default.
 
 See [examples](https://github.com/emicklei/recall/tree/main/examples) for other usage.
+
+### Panic
+
+By default, a Recaller with recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
+
+### Other work
 
 A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.
 
