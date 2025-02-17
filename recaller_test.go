@@ -100,8 +100,8 @@ func TestRecallRecordingWithPanic(t *testing.T) {
 	ctx := ContextWithLogger(context.Background(), log)
 	r := New(ctx).WithCaptureStrategy(RecordingStrategy)
 	r.Call(willPanic)
-	if len(rec.records) != 1 {
-		t.Fatalf("expected 1 record, got %d", len(rec.records))
+	if len(rec.records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(rec.records))
 	}
 
 	if !strings.HasSuffix(rec.records[0].Message, "before panic") {

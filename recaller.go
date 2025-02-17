@@ -92,7 +92,8 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 					// recover from second panic
 					secondErr := recover()
 					if secondErr != nil {
-						callErr = fmt.Errorf("panic: %v, stack:%s", secondErr, string(debug.Stack()))
+						currentLogger.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+						callErr = fmt.Errorf("%v", secondErr)
 					}
 				}()
 				callErr = r.recoveredCall(f)
@@ -134,7 +135,8 @@ func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr err
 			err := recover()
 			if err != nil {
 				rec.flush(ctx)
-				callErr = fmt.Errorf("panic: %v, stack:%s", err, string(debug.Stack()))
+				log.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+				callErr = fmt.Errorf("%v", err)
 			}
 		}()
 	}
