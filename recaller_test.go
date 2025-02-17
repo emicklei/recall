@@ -109,6 +109,21 @@ func TestRecallRecordingWithPanic(t *testing.T) {
 	}
 }
 
+func TestRecallRecordingNoPanic(t *testing.T) {
+	rec := new(recording)
+	log := slog.New(rec)
+	slog.SetDefault(log)
+	ctx := ContextWithLogger(context.Background(), log)
+	r := New(ctx).WithCaptureStrategy(RecordingStrategy).WithPanicRecovery(false)
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fail()
+		}
+	}()
+	r.Call(willPanic)
+}
+
 var retries = 0
 
 func noErrorOnRetry(ctx context.Context) error {
@@ -135,6 +150,17 @@ func TestRecallPanic(t *testing.T) {
 	if err == nil {
 		t.Error("expected error")
 	}
+}
+
+func TestRecallNoPanic(t *testing.T) {
+	r := New(context.Background()).WithPanicRecovery(false)
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fail()
+		}
+	}()
+	r.Call(willPanic)
 }
 
 func willPanic(ctx context.Context) error {

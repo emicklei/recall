@@ -64,6 +64,13 @@ func (r Recaller) WithCaptureStrategy(strategy captureStrategy) Recaller {
 	return r
 }
 
+// WithPanicRecovery enables or disables handling panics. Default is true.
+// An extra Error log entry is written after recovering from a panic.
+func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
+	r.handlePanic = enabled
+	return r
+}
+
 // Call calls the function and produces debug log messages when the function returns an error.
 // Depending on the capture strategy, the function is called once or twice.
 // The default strategy is to call the function a second time when an error is returned.

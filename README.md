@@ -51,6 +51,12 @@ This example uses RecallOnErrorStrategy by default.
 
 See [examples](https://github.com/emicklei/recall/tree/main/examples) for other usage.
 
+### Panic
+
+By default, a Recaller with recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
+
+### Other work
+
 A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.
 
 (c) 2025, https://ernestmicklei.com. MIT License.
