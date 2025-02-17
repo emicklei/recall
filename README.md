@@ -39,7 +39,9 @@ The function is not called a second time so no idempotency in processing is requ
 		log.Debug("this will show up on error")
 		return errors.New("something went wrong")
 	})
-
+	
+	slog.Error("bummer", "err", err)
+	
 will output
 
     2025/02/11 18:55:23 INFO begin
