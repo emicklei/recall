@@ -99,29 +99,25 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 					// recover from second panic
 					secondErr := recover()
 					if secondErr != nil {
-						currentLogger.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+						currentLogger.Error(fmt.Sprintf(r.messageFormat, "recovered from panic"),
+							"err", err, "stack", string(debug.Stack()))
 						callErr = fmt.Errorf("%v", secondErr)
 					}
 				}()
-				callErr = r.recoveredCall(f)
+				// second time return value could be nil
+				callErr = r.callWithDebugLogging(f)
 			}
 		}()
 	}
 	err := f(r.context)
 	if err != nil {
-		handler := debugHandler{currentLogger.Handler(), r.messageFormat}
-		debugLogger := slog.New(handler)
-		ctx := ContextWithLogger(r.context, debugLogger)
-		err = f(ctx)
-		if err == nil {
-			// this time it worked
-			return nil
-		}
+		// second time return value could be nil
+		err = r.callWithDebugLogging(f)
 	}
 	return err
 }
 
-func (r Recaller) recoveredCall(f func(ctx context.Context) error) error {
+func (r Recaller) callWithDebugLogging(f func(ctx context.Context) error) error {
 	currentLogger := LoggerFromContext(r.context)
 	handler := debugHandler{currentLogger.Handler(), r.messageFormat}
 	debugLogger := slog.New(handler)
@@ -142,7 +138,8 @@ func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr err
 			err := recover()
 			if err != nil {
 				rec.flush(ctx)
-				log.Error("recovered from panic", "err", err, "stack", string(debug.Stack()))
+				log.Error(fmt.Sprintf(r.messageFormat, "recovered from panic"),
+					"err", err, "stack", string(debug.Stack()))
 				callErr = fmt.Errorf("%v", err)
 			}
 		}()

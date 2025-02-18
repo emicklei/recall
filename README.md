@@ -55,7 +55,7 @@ See [examples](https://github.com/emicklei/recall/tree/main/examples) for other 
 
 ### Panic
 
-By default, a Recaller with recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
+By default, a Recaller will recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
 
 ### Other work
 
