@@ -57,6 +57,10 @@ See [examples](https://github.com/emicklei/recall/tree/main/examples) for other 
 
 By default, a Recaller will recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
 
+### Environment
+
+On initialization, the package will inspect the environment variable `RECALL_ENABLED` which can be used to disable log collection for each invocation of `Call` ; the function argument is called directly. 
+
 ### Other work
 
 A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.

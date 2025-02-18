@@ -4,9 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"runtime/debug"
 	"strings"
 )
+
+var recallEnabled bool
+
+func init() {
+	recallEnabled = os.Getenv("RECALL_ENABLED") != "true"
+}
 
 var logKey struct{ slog.Logger }
 
@@ -75,6 +82,9 @@ func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
 // Depending on the capture strategy, the function is called once or twice.
 // The default strategy is to call the function a second time when an error is returned.
 func (r Recaller) Call(f func(ctx context.Context) error) error {
+	if !recallEnabled {
+		return f(r.context)
+	}
 	if r.captureStrategy == RecordingStrategy {
 		return r.captureRecords(f)
 	}
