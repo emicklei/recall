@@ -9,6 +9,20 @@ import (
 	"errors"
 )
 
+func TestRecallDisabled(t *testing.T) {
+	recallEnabled = false
+	t.Cleanup(func() {
+		recallEnabled = true
+	})
+	rec := new(recording)
+	def := slog.New(rec)
+	r := New(ContextWithLogger(context.Background(), def))
+	r.Call(willError)
+	if len(rec.records) != 0 {
+		t.Fatalf("expected 0 records, got %d", len(rec.records))
+	}
+}
+
 func TestRecall(t *testing.T) {
 	r := New(context.Background())
 	err := r.Call(willError)
