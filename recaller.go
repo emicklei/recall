@@ -15,8 +15,11 @@ func ContextWithLogger(ctx context.Context, logger *slog.Logger) context.Context
 	return context.WithValue(ctx, logKey, logger)
 }
 
-// LoggerFromContext returns the logger from the context or the default logger if not found.
-func LoggerFromContext(ctx context.Context) (l *slog.Logger) {
+// alias
+var LoggerFromContext = Slog
+
+// Slog returns the slog logger from the context or the default logger if not found.
+func Slog(ctx context.Context) (l *slog.Logger) {
 	v := ctx.Value(logKey)
 	if v == nil {
 		return slog.Default()

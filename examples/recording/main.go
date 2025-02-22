@@ -12,7 +12,7 @@ func main() {
 	recaller := recall.New(context.Background()).WithCaptureStrategy(recall.RecordingStrategy)
 
 	err := recaller.Call(func(ctx context.Context) error {
-		rlog := recall.LoggerFromContext(ctx)
+		rlog := recall.Slog(ctx)
 
 		rlog.Info("begin")
 		rlog.Debug("this will show up on error", "k", "v")

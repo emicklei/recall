@@ -30,7 +30,7 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 
 		if err := doWork(ctx, r.PathValue("workId")); err != nil {
 			// must use logger from context
-			rlog := recall.LoggerFromContext(ctx)
+			rlog := recall.Slog(ctx)
 			rlog.Error("work failed", "err", err)
 			return err
 		}
@@ -45,7 +45,7 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 
 func doWork(ctx context.Context, workId string) error {
 	// must use rlog from context
-	rlog := recall.LoggerFromContext(ctx)
+	rlog := recall.Slog(ctx)
 
 	rlog.Info("doWork started")
 
@@ -57,7 +57,7 @@ func doWork(ctx context.Context, workId string) error {
 
 func doOtherWork(ctx context.Context, workId string) error {
 	// must use rlog from context
-	rlog := recall.LoggerFromContext(ctx)
+	rlog := recall.Slog(ctx)
 
 	// this will show up on recall only or once if debug is enabled
 	rlog.Debug("doOtherWork", "workId", workId)
