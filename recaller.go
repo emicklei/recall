@@ -12,7 +12,7 @@ import (
 var recallEnabled bool
 
 func init() {
-	recallEnabled = os.Getenv("RECALL_ENABLED") != "true"
+	recallEnabled = os.Getenv("RECALL_ENABLED") != "false" // true if unset
 }
 
 var logKey struct{ slog.Logger }
