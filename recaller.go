@@ -76,7 +76,7 @@ func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
 }
 
 // WithErrorFilter sets the filter function to decide what kind of errors can lead to a recall.
-// If the function returns true then the error will cause a recal ; false will skip it.
+// If the function returns true then the error will cause a recall ; false will skip it.
 // Without a filter, all errors will cause a strategy activation.
 func (r Recaller) WithErrorFilter(filter func(err error) bool) Recaller {
 	r.errFilter = filter
@@ -96,7 +96,7 @@ func (r Recaller) Call(f func(ctx context.Context) error) error {
 // captureStrategyRecallOnError calls the function and captures debug log messages on the second call
 // when the function returns an error.
 func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error) (callErr error) {
-	currentLogger := LoggerFromContext(r.context)
+	currentLogger := Slog(r.context)
 	// is debug enabled?
 	if currentLogger.Handler().Enabled(r.context, slog.LevelDebug) {
 		// no recall on error needed
@@ -134,7 +134,7 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 }
 
 func (r Recaller) callWithDebugLogging(f func(ctx context.Context) error) error {
-	currentLogger := LoggerFromContext(r.context)
+	currentLogger := Slog(r.context)
 	handler := debugHandler{currentLogger.Handler(), r.messageFormat}
 	debugLogger := slog.New(handler)
 	ctx := ContextWithLogger(r.context, debugLogger)
@@ -162,6 +162,11 @@ func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr err
 	}
 	err := f(ctx)
 	if err != nil {
+		// check if error passes the filter
+		if r.errFilter != nil && !r.errFilter(err) {
+			rec.reset()
+			return err
+		}
 		rec.flush(ctx)
 	}
 	return err
