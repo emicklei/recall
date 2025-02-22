@@ -28,16 +28,10 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 	// wrap doWork in a function to be able to call it again on error
 	if err := recaller.Call(func(ctx context.Context) error {
 
-		if err := doWork(ctx, r.PathValue("workId")); err != nil {
-			// must use logger from context
-			rlog := recall.Slog(ctx)
-			rlog.Error("work failed", "err", err)
-			return err
-		}
-		return nil
+		return doWork(ctx, r.PathValue("workId"))
 
 	}); err != nil {
-		// already logged, just return response
+		logWithRequestID.Error("work failed", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
