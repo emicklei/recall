@@ -39,6 +39,7 @@ type Recaller struct {
 	messageFormat   string
 	captureStrategy captureStrategy
 	handlePanic     bool
+	errFilter       func(err error) bool // if this returns true then a recall will happen
 }
 
 // New creates a new Recaller initialized with a Context, default logger and default message format.
@@ -74,6 +75,14 @@ func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
 	return r
 }
 
+// WithErrorFilter sets the filter function to decide what kind of errors can lead to a recall.
+// If the function returns true then the error will cause a recall ; false will skip it.
+// Without a filter, all errors will cause a strategy activation.
+func (r Recaller) WithErrorFilter(filter func(err error) bool) Recaller {
+	r.errFilter = filter
+	return r
+}
+
 // Call calls the function and produces debug log messages when the function returns an error.
 // Depending on the capture strategy, the function is called once or twice.
 // The default strategy is to call the function a second time when an error is returned.
@@ -87,7 +96,7 @@ func (r Recaller) Call(f func(ctx context.Context) error) error {
 // captureStrategyRecallOnError calls the function and captures debug log messages on the second call
 // when the function returns an error.
 func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error) (callErr error) {
-	currentLogger := LoggerFromContext(r.context)
+	currentLogger := Slog(r.context)
 	// is debug enabled?
 	if currentLogger.Handler().Enabled(r.context, slog.LevelDebug) {
 		// no recall on error needed
@@ -114,6 +123,10 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 	}
 	err := f(r.context)
 	if err != nil {
+		// check if error passes the filter
+		if r.errFilter != nil && !r.errFilter(err) {
+			return err
+		}
 		// second time return value could be nil
 		err = r.callWithDebugLogging(f)
 	}
@@ -121,7 +134,7 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 }
 
 func (r Recaller) callWithDebugLogging(f func(ctx context.Context) error) error {
-	currentLogger := LoggerFromContext(r.context)
+	currentLogger := Slog(r.context)
 	handler := debugHandler{currentLogger.Handler(), r.messageFormat}
 	debugLogger := slog.New(handler)
 	ctx := ContextWithLogger(r.context, debugLogger)
@@ -149,6 +162,11 @@ func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr err
 	}
 	err := f(ctx)
 	if err != nil {
+		// check if error passes the filter
+		if r.errFilter != nil && !r.errFilter(err) {
+			rec.reset()
+			return err
+		}
 		rec.flush(ctx)
 	}
 	return err

@@ -20,6 +20,19 @@ func TestRecall(t *testing.T) {
 		t.Error("expected no error")
 	}
 }
+
+func TestRecallFilterNone(t *testing.T) {
+	rec := new(recording)
+	ctx := ContextWithLogger(context.Background(), slog.New(rec))
+	r := New(ctx).WithErrorFilter(func(err error) bool {
+		return false
+	})
+	r.Call(willError)
+	if len(rec.records) != 0 {
+		t.Fatalf("expected 0 record, got %d", len(rec.records))
+	}
+}
+
 func TestRecallSecondSuccess(t *testing.T) {
 	r := New(context.Background())
 	err := r.Call(noErrorOnRetry)
@@ -36,6 +49,19 @@ func TestRecallRecording(t *testing.T) {
 	err = r.Call(noError)
 	if err != nil {
 		t.Error("expected no error")
+	}
+}
+
+func TestRecallRecordingFilterNone(t *testing.T) {
+	rec := new(recording)
+	rec.level = slog.LevelDebug
+	def := slog.New(rec)
+	r := New(ContextWithLogger(context.Background(), def)).WithCaptureStrategy(RecordingStrategy).WithErrorFilter(func(err error) bool {
+		return false
+	})
+	r.Call(willError)
+	if len(rec.records) != 0 {
+		t.Fatalf("expected 0 records, got %d", len(rec.records))
 	}
 }
 
@@ -127,7 +153,7 @@ func TestRecallRecordingNoPanic(t *testing.T) {
 var retries = 0
 
 func noErrorOnRetry(ctx context.Context) error {
-	LoggerFromContext(ctx).Debug("will error first time")
+	Slog(ctx).Debug("will error first time")
 	if retries == 0 {
 		retries++
 		return errors.New("error")
@@ -136,11 +162,11 @@ func noErrorOnRetry(ctx context.Context) error {
 }
 
 func willError(ctx context.Context) error {
-	LoggerFromContext(ctx).Debug("will error")
+	Slog(ctx).Debug("will error")
 	return errors.New("error")
 }
 func noError(ctx context.Context) error {
-	LoggerFromContext(ctx).Debug("no error")
+	Slog(ctx).Debug("no error")
 	return nil
 }
 
@@ -164,7 +190,7 @@ func TestRecallNoPanic(t *testing.T) {
 }
 
 func willPanic(ctx context.Context) error {
-	LoggerFromContext(ctx).Debug("before panic")
+	Slog(ctx).Debug("before panic")
 	panic("boom")
 }
 

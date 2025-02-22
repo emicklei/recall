@@ -80,6 +80,12 @@ func (r *recorder) WithGroup(group string) slog.Handler {
 	return subRecorder{root: r, group: group}
 }
 
+func (r *recorder) reset() {
+	r.mux.Lock()
+	defer r.mux.Unlock()
+	r.records = []slog.Record{}
+}
+
 func (r *recorder) flush(ctx context.Context) {
 	r.mux.Lock()
 	defer r.mux.Unlock()
