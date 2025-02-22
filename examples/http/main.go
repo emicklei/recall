@@ -25,17 +25,18 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 	ctxWithLogger := recall.ContextWithLogger(r.Context(), logWithRequestID)
 	recaller := recall.New(ctxWithLogger)
 
-	// wrap the work in a function to be able to call it again on error
-	toCall := func(ctx context.Context) error {
+	// wrap doWork in a function to be able to call it again on error
+	if err := recaller.Call(func(ctx context.Context) error {
+
 		if err := doWork(ctx, r.PathValue("workId")); err != nil {
 			// must use logger from context
-			logger := recall.LoggerFromContext(ctx)
-			logger.Error("work failed", "err", err)
+			rlog := recall.LoggerFromContext(ctx)
+			rlog.Error("work failed", "err", err)
 			return err
 		}
 		return nil
-	}
-	if err := recaller.Call(toCall); err != nil {
+
+	}); err != nil {
 		// already logged, just return response
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -43,23 +44,23 @@ func handleWork(w http.ResponseWriter, r *http.Request) {
 }
 
 func doWork(ctx context.Context, workId string) error {
-	// must use logger from context
-	logger := recall.LoggerFromContext(ctx)
+	// must use rlog from context
+	rlog := recall.LoggerFromContext(ctx)
 
-	logger.Info("doWork started")
+	rlog.Info("doWork started")
 
 	// this will show up on recall only or once if debug is enabled
-	logger.Debug("doWork debug information", "var", "value")
+	rlog.Debug("doWork debug information", "var", "value")
 
 	return doOtherWork(ctx, workId)
 }
 
 func doOtherWork(ctx context.Context, workId string) error {
-	// must use logger from context
-	logger := recall.LoggerFromContext(ctx)
+	// must use rlog from context
+	rlog := recall.LoggerFromContext(ctx)
 
 	// this will show up on recall only or once if debug is enabled
-	logger.Debug("doOtherWork", "workId", workId)
+	rlog.Debug("doOtherWork", "workId", workId)
 
 	// simulate something that fails
 	if workId == "fail" {

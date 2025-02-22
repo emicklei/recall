@@ -33,10 +33,10 @@ The function is not called a second time so no idempotency in processing is requ
 	recaller := recall.New(context.Background())
 
 	err := recaller.Call(func(ctx context.Context) error {
-		log := recall.LoggerFromContext(ctx)
+		rlog := recall.LoggerFromContext(ctx)
 		
-		log.Info("begin")
-		log.Debug("this will show up on error")
+		rlog.Info("begin")
+		rlog.Debug("this will show up on error")
 		return errors.New("something went wrong")
 	})
 	
@@ -61,4 +61,4 @@ By default, a Recaller will recover from a panic and writes an Error message wit
 
 A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.
 
-(c) 2025, https://ernestmicklei.com. MIT License.
+&copy; 2025, https://ernestmicklei.com. MIT License.
