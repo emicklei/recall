@@ -8,6 +8,8 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/emicklei/recall"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const requestIDHeader = "x-request-id"
@@ -25,7 +27,16 @@ func NewRecallInterceptor() connect.UnaryInterceptorFunc {
 				requestID = strconv.FormatInt(localRequestID.Add(1), 10)
 			}
 			withRequestID := slog.Default().With(slog.String(requestIDHeader, requestID))
-			recaller := recall.New(recall.ContextWithLogger(ctx, withRequestID))
+			recaller := recall.New(recall.ContextWithLogger(ctx, withRequestID)).WithErrorFilter(func(err error) bool {
+				// e.g. not found and bad argument must not be recalled
+				if se, ok := status.FromError(err); ok {
+					switch se.Code() {
+					case codes.NotFound, codes.InvalidArgument, codes.Unauthenticated:
+						return false
+					}
+				}
+				return true
+			})
 			var resp connect.AnyResponse
 			err := recaller.Call(func(callCtx context.Context) error {
 				response, nextErr := next(callCtx, req)
