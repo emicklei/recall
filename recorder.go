@@ -86,6 +86,7 @@ func (r *recorder) flush(ctx context.Context) {
 	for _, record := range r.records {
 		if record.Level == slog.LevelDebug {
 			record.Message = fmt.Sprintf(r.messageFormat, record.Message)
+			record.AddAttrs(slog.Bool("recall", true))
 			// change level otherwise it will be filtered out
 			record.Level = slog.LevelInfo
 		}
