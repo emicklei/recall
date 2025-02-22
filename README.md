@@ -57,6 +57,10 @@ See [examples](https://github.com/emicklei/recall/tree/main/examples) for other 
 
 By default, a Recaller will recover from a panic and writes an Error message with stack information, before returning an error with the panic message. You can disable panic recovery using `WithPanicRecovery(false)`.
 
+### Not all errors are equal
+
+If your function can return an error for which it makes no sense to retry it then you can set a `filter` function to check the error before applying the strategy. Use the `WithErrorFilter(...)` to set the function for the Recaller.
+
 ### Other work
 
 A different approach in both capturing and visualising logging is offered by the [Nanny](https://github.com/emicklei/nanny) package.
