@@ -39,6 +39,7 @@ type Recaller struct {
 	messageFormat   string
 	captureStrategy captureStrategy
 	handlePanic     bool
+	errFilter       func(err error) bool // if this returns true then a recall will happen
 }
 
 // New creates a new Recaller initialized with a Context, default logger and default message format.
@@ -71,6 +72,14 @@ func (r Recaller) WithCaptureStrategy(strategy captureStrategy) Recaller {
 // An extra Error log entry is written after recovering from a panic.
 func (r Recaller) WithPanicRecovery(enabled bool) Recaller {
 	r.handlePanic = enabled
+	return r
+}
+
+// WithErrorFilter sets the filter function to decide what kind of errors can lead to a recall.
+// If the function returns true then the error will cause a recal ; false will skip it.
+// Without a filter, all errors will cause a strategy activation.
+func (r Recaller) WithErrorFilter(filter func(err error) bool) Recaller {
+	r.errFilter = filter
 	return r
 }
 
@@ -114,6 +123,10 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 	}
 	err := f(r.context)
 	if err != nil {
+		// check if error passes the filter
+		if r.errFilter != nil && !r.errFilter(err) {
+			return err
+		}
 		// second time return value could be nil
 		err = r.callWithDebugLogging(f)
 	}
