@@ -20,7 +20,7 @@ type logFailedRequestHandler struct {
 
 // NewRecallHandler uses the RecordingStrategy for capturing logs during HTTP request processing.
 // It will write the Debug logs if the request fails (http status >= 400) and details about the HTTP request including the payload.
-func NewRecallHandler(next http.Handler) http.Handler {
+func NewRecallHandler(next http.Handler) logFailedRequestHandler {
 	return logFailedRequestHandler{next: next, messageFormat: "[RECALL] %s", handlePanic: true, bufferCapacity: math.MaxInt}
 }
 

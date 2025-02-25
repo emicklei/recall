@@ -11,9 +11,23 @@ import (
 func TestRecallHandler(t *testing.T) {
 	bad := erroringHandler{}
 	h := NewRecallHandler(bad)
+	h = h.WithMessageFormat("test %s")
+	h = h.WithPanicRecovery(false)
+	h = h.WithRequestBodyCapture(100)
+
 	rec := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", bytes.NewBufferString("test"))
 	h.ServeHTTP(rec, req)
+}
+
+func TestRecallHandlerBadMessageFormat(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err == nil {
+			t.Fatal()
+		}
+	}()
+	NewRecallHandler(nil).WithMessageFormat("")
 }
 
 type erroringHandler struct{ dopanic bool }
