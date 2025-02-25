@@ -45,7 +45,9 @@ func (h logFailedRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			err := recover()
 			if err != nil {
 				rec.flush(ctx)
-				log.Error(fmt.Sprintf(h.messageFormat, "recovered from panic"),
+				def.Error(fmt.Sprintf(h.messageFormat, "recovered from panic"),
+					"method", r.Method, "url", r.URL, "headers", r.Header,
+					"payload", string(payload), "status", http.StatusInternalServerError,
 					"err", err, "stack", string(debug.Stack()))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -60,7 +62,8 @@ func (h logFailedRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// did it fail?
 	if responseWriter.statusCode >= http.StatusBadRequest {
 		rec.flush(ctx)
-		slog.Info(fmt.Sprintf(h.messageFormat, "HTTP request handling failed"), "method", r.Method, "url", r.URL, "headers", r.Header, "payload", string(payload), "status", responseWriter.statusCode)
+		slog.Info(fmt.Sprintf(h.messageFormat, "HTTP request handling failed"), "method", r.Method,
+			"url", r.URL, "headers", r.Header, "payload", string(payload), "status", responseWriter.statusCode)
 	}
 }
 
