@@ -37,3 +37,20 @@ func TestRecallHandlerPanic(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/", bytes.NewBufferString("test"))
 	h.ServeHTTP(rec, req)
 }
+
+func TestLimitedBodyRecorder(t *testing.T) {
+	r := io.NopCloser(bytes.NewReader([]byte("test"))) // 4 bytes to read
+	l := &limitedBodyRecorder{body: r, limit: 2, buffer: new(bytes.Buffer)}
+	n, _ := l.Read(make([]byte, 3))
+	remain, _ := io.ReadAll(l)
+	if got, want := n, 3; got != want {
+		t.Errorf("got [%[1]v:%[1]T] want [%[2]v:%[2]T]", got, want)
+	}
+	l.Close()
+	if got, want := l.recorded(), "te..(2 of 4)"; got != want {
+		t.Errorf("got [%[1]v:%[1]T] want [%[2]v:%[2]T]", got, want)
+	}
+	if got, want := len(remain), 1; got != want {
+		t.Errorf("got [%[1]v:%[1]T] want [%[2]v:%[2]T]", got, want)
+	}
+}

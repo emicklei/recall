@@ -10,27 +10,23 @@ import (
 )
 
 type logFailedRequestHandler struct {
-	next          http.Handler
-	messageFormat string
-	handlePanic   bool
+	next           http.Handler
+	messageFormat  string
+	handlePanic    bool
+	bufferCapacity int
 }
 
 // NewRecallHandler using the RecordingStrategy for capturing logs during HTTP request processing.
 // It will write the Debug logs if the request fails (http status >= 400) and details about the HTTP request including the payload.
 func NewRecallHandler(next http.Handler) http.Handler {
-	return logFailedRequestHandler{next: next, messageFormat: "[RECALL] %s", handlePanic: true}
+	return logFailedRequestHandler{next: next, messageFormat: "[RECALL] %s", handlePanic: true, bufferCapacity: 4096}
 }
 
 // ServeHTTP implements http.Handler
 func (h logFailedRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// record request payload
-	var payload []byte
-	if r.Body != nil {
-		// store it for logging if processing it fails
-		payload, _ = io.ReadAll(r.Body)
-		r.Body.Close()
-		r.Body = io.NopCloser(bytes.NewReader(payload))
-	}
+	// record request payload up to buffer capacity
+	bodyReader := &limitedBodyRecorder{body: r.Body, limit: h.bufferCapacity, buffer: new(bytes.Buffer)}
+	r.Body = bodyReader
 
 	// create context with recording logger
 	def := slog.Default()
@@ -47,7 +43,7 @@ func (h logFailedRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 				rec.flush(ctx)
 				def.Error(fmt.Sprintf(h.messageFormat, "recovered from panic"),
 					"method", r.Method, "url", r.URL, "headers", r.Header,
-					"payload", string(payload), "status", http.StatusInternalServerError,
+					"payload", bodyReader.recorded(), "status", http.StatusInternalServerError,
 					"err", err, "stack", string(debug.Stack()))
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -63,7 +59,7 @@ func (h logFailedRequestHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	if responseWriter.statusCode >= http.StatusBadRequest {
 		rec.flush(ctx)
 		slog.Info(fmt.Sprintf(h.messageFormat, "HTTP request handling failed"), "method", r.Method,
-			"url", r.URL, "headers", r.Header, "payload", string(payload), "status", responseWriter.statusCode)
+			"url", r.URL, "headers", r.Header, "payload", bodyReader.recorded(), "status", responseWriter.statusCode)
 	}
 }
 
@@ -75,4 +71,32 @@ type statusCodeRecorder struct {
 func (h *statusCodeRecorder) WriteHeader(c int) {
 	h.statusCode = c
 	h.ResponseWriter.WriteHeader(c)
+}
+
+type limitedBodyRecorder struct {
+	body      io.ReadCloser
+	limit     int
+	buffer    *bytes.Buffer
+	bytesRead int
+}
+
+func (l *limitedBodyRecorder) Read(p []byte) (n int, err error) {
+	n, err = l.body.Read(p)
+	// write to buffer until hit limit
+	if size := l.buffer.Len(); size < l.limit {
+		max := min(n, l.limit-size)
+		l.buffer.Write(p[:max])
+	}
+	l.bytesRead += n
+	return
+}
+func (l *limitedBodyRecorder) Close() error {
+	return l.body.Close()
+}
+func (l *limitedBodyRecorder) recorded() string {
+	s := l.buffer.String()
+	if len(l.buffer.Bytes()) < l.bytesRead {
+		s = fmt.Sprintf("%s..(%d of %d)", s, l.limit, l.bytesRead)
+	}
+	return s
 }
