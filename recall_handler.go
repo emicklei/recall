@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
 	"runtime/debug"
+	"strings"
 )
 
 type logFailedRequestHandler struct {
@@ -16,10 +18,33 @@ type logFailedRequestHandler struct {
 	bufferCapacity int
 }
 
-// NewRecallHandler using the RecordingStrategy for capturing logs during HTTP request processing.
+// NewRecallHandler uses the RecordingStrategy for capturing logs during HTTP request processing.
 // It will write the Debug logs if the request fails (http status >= 400) and details about the HTTP request including the payload.
 func NewRecallHandler(next http.Handler) http.Handler {
-	return logFailedRequestHandler{next: next, messageFormat: "[RECALL] %s", handlePanic: true, bufferCapacity: 4096}
+	return logFailedRequestHandler{next: next, messageFormat: "[RECALL] %s", handlePanic: true, bufferCapacity: math.MaxInt}
+}
+
+// WithPanicRecovery enables or disables handling panics. Default is true.
+// An extra Error log entry is written after recovering from a panic.
+func (h logFailedRequestHandler) WithPanicRecovery(enabled bool) logFailedRequestHandler {
+	h.handlePanic = enabled
+	return h
+}
+
+// WithMessageFormat sets the message format for the debug log message.
+// Must contains a single %s placeholder for the original message.
+func (h logFailedRequestHandler) WithMessageFormat(format string) logFailedRequestHandler {
+	if !strings.Contains(format, "%s") {
+		panic("Recaller message format must contain a single %s placeholder")
+	}
+	h.messageFormat = format
+	return h
+}
+
+// WithRequestBodyCapture sets a limit to the size of the recorded request body for logging on failure.
+func (h logFailedRequestHandler) WithRequestBodyCapture(maxBytes int) logFailedRequestHandler {
+	h.bufferCapacity = maxBytes
+	return h
 }
 
 // ServeHTTP implements http.Handler
