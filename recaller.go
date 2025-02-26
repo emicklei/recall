@@ -10,6 +10,8 @@ import (
 
 var logKey struct{ slog.Logger }
 
+const recallAttrKey = "recall"
+
 // ContextWithLogger returns a new context with the logger.
 func ContextWithLogger(ctx context.Context, logger *slog.Logger) context.Context {
 	return context.WithValue(ctx, logKey, logger)
@@ -112,7 +114,7 @@ func (r Recaller) captureStrategyRecallOnError(f func(ctx context.Context) error
 					secondErr := recover()
 					if secondErr != nil {
 						currentLogger.Error(fmt.Sprintf(r.messageFormat, "recovered from panic"),
-							"err", err, "stack", string(debug.Stack()))
+							recallAttrKey, true, "err", err, "stack", string(debug.Stack()))
 						callErr = fmt.Errorf("%v", secondErr)
 					}
 				}()
@@ -155,7 +157,7 @@ func (r Recaller) captureRecords(f func(ctx context.Context) error) (callErr err
 			if err != nil {
 				rec.flush(ctx)
 				log.Error(fmt.Sprintf(r.messageFormat, "recovered from panic"),
-					"err", err, "stack", string(debug.Stack()))
+					recallAttrKey, true, "err", err, "stack", string(debug.Stack()))
 				callErr = fmt.Errorf("%v", err)
 			}
 		}()
