@@ -11,9 +11,19 @@ import (
 func main() {
 	fmt.Println("try each of these:")
 	fmt.Println("curl http://localhost:8080/ok")
-	fmt.Println("curl http://localhost:8080/fail")
+	fmt.Println(`curl -H "Authorization:secret" http://localhost:8080/fail`)
 	http.HandleFunc("/{workId}", handleWork)
-	http.ListenAndServe(":8080", recall.NewRecallHandler(http.DefaultServeMux))
+
+	handler := recall.NewRecallHandler(http.DefaultServeMux)
+	handler = handler.WithMessageFormat("[DEMO] %s")
+	handler = handler.WithPanicRecovery(false)     // override default
+	handler = handler.WithRequestBodyCapture(1024) // log only the first 1024 bytes on failure
+	handler = handler.WithHeaderFilter(func(in http.Header) (out http.Header) {
+		c := in.Clone()
+		c.Del("Authorization")
+		return c
+	})
+	http.ListenAndServe(":8080", handler)
 }
 
 func handleWork(w http.ResponseWriter, r *http.Request) {
