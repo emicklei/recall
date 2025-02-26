@@ -68,7 +68,7 @@ will output
 
 ##### Usage (RecordingStrategy in HTTP handler)
 
-`NewRecallHandler` returns a http.Handler that inspect the HTTP status code to decide to write recorded Debug log records. 
+`NewRecallHandler` returns a http.Handler that inspects the HTTP status code to decide to write recorded Debug log records. 
 The handler is not called a second time so no idempotency in processing is required.
 
 	http.ListenAndServe(":8080", recall.NewRecallHandler(http.DefaultServeMux))
