@@ -20,6 +20,22 @@ func TestRecallHandler(t *testing.T) {
 	h.ServeHTTP(rec, req)
 }
 
+func TestRecallHandlerFilterHeader(t *testing.T) {
+	bad := erroringHandler{}
+	h := NewRecallHandler(bad)
+	h = h.WithHeaderFilter(func(in http.Header) (out http.Header) {
+		c := in.Clone()
+		c.Del("authorization")
+		return c
+	})
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", bytes.NewBufferString("test"))
+	req.Header.Set("authorization", "secret")
+	req.Header.Set("keep", "this")
+	h.ServeHTTP(rec, req)
+}
+
 func TestRecallHandlerBadMessageFormat(t *testing.T) {
 	defer func() {
 		err := recover()

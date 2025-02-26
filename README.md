@@ -22,7 +22,13 @@ If an error is detected, a Recaller will call that same function again, but this
 This strategy requires that your function has no side-effects ; idempotency.
 This is the default strategy.
 
-##### Usage
+#### RecordingStrategy
+
+Debug logging is recorded by the Recaller directly and only if an error is detected, the log records are replayed from memory using the default logger. 
+This strategy can result in a higher memory consumption (and GC time) because all Debug records are recorded on every function call. 
+The function is not called a second time so no idempotency in processing is required.
+
+##### Usage (RecallOnErrorStrategy)
 
 	recaller := recall.New(context.Background())
 
@@ -43,14 +49,7 @@ will output
     2025/02/11 18:55:23 INFO [RECALL] this will show up on error
     2025/02/11 18:55:23 ERROR bummer err="something went wrong"
 
-
-#### RecordingStrategy
-
-Debug logging is recorded by the Recaller directly and only if an error is detected, the log records are replayed from memory using the default logger. 
-This strategy can result in a higher memory consumption (and GC time) because all Debug records are recorded on every function call. 
-The function is not called a second time so no idempotency in processing is required.
-
-##### Usage
+##### Usage (RecordingStrategy in Call)
 
 	recaller := recall.New(context.Background()).WithCaptureStrategy(recall.RecordingStrategy)
 
@@ -67,7 +66,7 @@ will output
 	2025/02/12 15:56:07 INFO begin
 	2025/02/12 15:56:07 INFO [RECALL] this will show up on error
 
-##### Usage of the HTTP handler
+##### Usage (RecordingStrategy in HTTP handler)
 
 `NewRecallHandler` returns a http.Handler that inspect the HTTP status code to decide to write recorded Debug log records. 
 The handler is not called a second time so no idempotency in processing is required.
