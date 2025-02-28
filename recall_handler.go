@@ -63,6 +63,7 @@ func (h RecallHandler) WithHeaderFilter(f func(in http.Header) (out http.Header)
 }
 
 // WithStatusCodeFilter allows you to decide for which HTTP status code you want to produce log entries.
+// If the function returns true then the status will cause Debug logs ; false will skip it.
 func (h RecallHandler) WithStatusCodeFilter(f func(statusCode int) bool) RecallHandler {
 	h.statusCodeFilter = f
 	return h

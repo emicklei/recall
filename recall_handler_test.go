@@ -34,6 +34,23 @@ func TestRecallHandlerFilterHeader(t *testing.T) {
 	req.Header.Set("authorization", "secret")
 	req.Header.Set("keep", "this")
 	h.ServeHTTP(rec, req)
+	if rec.Code != 500 {
+		t.Fatal()
+	}
+}
+
+func TestRecallHandlerFilterStatusCode(t *testing.T) {
+	bad := erroringHandler{}
+	h := NewRecallHandler(bad)
+	h = h.WithStatusCodeFilter(func(statusCode int) bool {
+		return false
+	})
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", bytes.NewBufferString("test"))
+	h.ServeHTTP(rec, req)
+	if rec.Code != 500 {
+		t.Fatal()
+	}
 }
 
 func TestRecallHandlerBadMessageFormat(t *testing.T) {
