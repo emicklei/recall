@@ -81,7 +81,7 @@ By default, a Recaller will recover from a panic and writes an Error message wit
 
 ### Not all errors are equal
 
-If your function can return an error for which it makes no sense to retry it then you can set a `filter` function to check the error before applying the strategy. Use the `WithErrorFilter(...)` to set the function for the Recaller.
+If your function can return an error for which it makes no sense to retry it then you can set a `filter` function to check the error before applying the strategy. Use the `WithErrorFilter(...)` to set the function for the Recaller or `WithStatusCodeFilter(...)` to set the function for a RecallHandler.
 
 ### Other work
 
