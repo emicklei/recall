@@ -12,11 +12,12 @@ import (
 )
 
 type RecallHandler struct {
-	next           http.Handler
-	messageFormat  string
-	handlePanic    bool
-	bufferCapacity int
-	headerFilter   func(in http.Header) (out http.Header)
+	next             http.Handler
+	messageFormat    string
+	handlePanic      bool
+	bufferCapacity   int
+	headerFilter     func(in http.Header) (out http.Header)
+	statusCodeFilter func(statusCode int) bool
 }
 
 // NewRecallHandler uses the RecordingStrategy for capturing logs during HTTP request processing.
@@ -61,6 +62,12 @@ func (h RecallHandler) WithHeaderFilter(f func(in http.Header) (out http.Header)
 	return h
 }
 
+// WithStatusCodeFilter allows you to decide for which HTTP status code you want to produce log entries.
+func (h RecallHandler) WithStatusCodeFilter(f func(statusCode int) bool) RecallHandler {
+	h.statusCodeFilter = f
+	return h
+}
+
 // ServeHTTP implements http.Handler
 func (h RecallHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// record request payload up to buffer capacity
@@ -95,7 +102,11 @@ func (h RecallHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.next.ServeHTTP(responseWriter, r.WithContext(ctx))
 
 	// did it fail?
-	if responseWriter.statusCode >= http.StatusBadRequest {
+	fail := responseWriter.statusCode >= http.StatusBadRequest
+	if h.statusCodeFilter != nil {
+		fail = fail && h.statusCodeFilter(responseWriter.statusCode)
+	}
+	if fail {
 		rec.flush(ctx)
 		slog.Info(fmt.Sprintf(h.messageFormat, "HTTP request handling failed"), "method", r.Method,
 			"url", r.URL, "headers", h.filteredHeaders(r.Header), "payload", bodyReader.recorded(), "status", responseWriter.statusCode)
