@@ -103,9 +103,10 @@ func (h RecallHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.next.ServeHTTP(responseWriter, r.WithContext(ctx))
 
 	// did it fail?
-	fail := responseWriter.statusCode >= http.StatusBadRequest
+	fail := responseWriter.statusCode >= http.StatusInternalServerError
 	if h.statusCodeFilter != nil {
-		fail = fail && h.statusCodeFilter(responseWriter.statusCode)
+		// override fail logic with custom filter
+		fail = h.statusCodeFilter(responseWriter.statusCode)
 	}
 	if fail {
 		rec.flush(ctx)
